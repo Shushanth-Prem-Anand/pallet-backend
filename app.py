@@ -8,7 +8,6 @@ from oauth2client.service_account import ServiceAccountCredentials
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
-
 # ===================== Init =====================
 app = Flask(__name__)
 CORS(app, supports_credentials=True, origins=["https://creative-pavlova-c07a2b.netlify.app"])
@@ -32,7 +31,6 @@ try:
     creds_b64 = os.environ["GOOGLE_CREDS_B64"]
     creds_json = base64.b64decode(creds_b64).decode("utf-8")
 
-    # Write to a temp file just for gspread to read
     creds_path = "temp_google_creds.json"
     with open(creds_path, "w") as f:
         f.write(creds_json)
@@ -65,9 +63,13 @@ def compute_features(material_list):
         if mat_id in master_df.index:
             row = master_df.loc[mat_id]
             weight = row["Weight"]
-            volume = row["Length"] * row["Width"] * row["Height"]
+            length = row["Length"]
+            width = row["Width"]
+            height = row["Height"]
+
+            volume_cm3 = length * width * height  # correct formula
             total_weight += weight * qty
-            total_volume += volume * qty
+            total_volume += volume_cm3 * qty
 
     unique_materials = len(set(material_ids))
     task_count = len(material_ids)
@@ -102,10 +104,11 @@ def predict_pallets(features):
     ]).reshape(1, -1)
 
     pallets = int(round(model.predict(X)[0]))
+
     return {
         "predicted_pallets": max(pallets, 1),
         "model_used": model_type,
-        "features_used": features
+        **features  # flatten all features for frontend
     }
 
 # ===================== Routes =====================
@@ -139,6 +142,7 @@ def submit_feedback():
 def home():
     return "✅ Pallet Prediction API is running!"
 
+# ===================== Run =====================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
