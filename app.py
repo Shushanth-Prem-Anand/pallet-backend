@@ -7,11 +7,11 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-CORS(app, supports_credentials=True)
+
 
 # ===================== Init =====================
 app = Flask(__name__)
-CORS(app)
+CORS(app, supports_credentials=True)
 
 # Load models
 base_dir = os.path.dirname(__file__)
