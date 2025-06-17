@@ -39,7 +39,7 @@ try:
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
     creds = ServiceAccountCredentials.from_json_keyfile_name(creds_path, scope)
     client = gspread.authorize(creds)
-    SHEET_NAME = "Pallet Feedback Sheet"
+    SHEET_NAME = "Pallet_feedback_log"
     sheet = client.open(SHEET_NAME).sheet1
 except Exception as e:
     print("⚠️ Google Sheet setup failed:", e)
