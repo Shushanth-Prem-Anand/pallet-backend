@@ -11,7 +11,7 @@ from flask_cors import CORS
 
 # ===================== Init =====================
 app = Flask(__name__)
-CORS(app, supports_credentials=True)
+CORS(app, supports_credentials=True, origins=["https://creative-pavlova-c07a2b.netlify.app"])
 
 # Load models
 base_dir = os.path.dirname(__file__)
