@@ -114,11 +114,20 @@ def predict_pallets(features):
 
     pallets = int(round(model.predict(X)[0]))
 
-    return {
+    response = {
         "predicted_pallets": max(pallets, 1),
         "model_used": model_type,
-        **features
+        "Unique_Materials": features["Unique_Materials"],
+        "Task_Count": features["Task_Count"],
+        "Total_Quantity": features["Total_Quantity"],
+        "Total_Weight": features["Total_Weight"],
+        "Total_Volume": features["Total_Volume"],
+        "Avg_Packing_Density": features["Avg_Packing_Density"],
+        "Special_Materials": features.get("Special_Materials", [])
     }
+
+    print("✅ Final response →", response)
+    return response
 
 # ===================== Routes =====================
 @app.route("/predict", methods=["POST"])
