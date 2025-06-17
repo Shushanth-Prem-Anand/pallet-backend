@@ -62,18 +62,27 @@ def compute_features(material_list):
 
         if mat_id in master_df.index:
             row = master_df.loc[mat_id]
-            weight = row["Weight"]
-            length = row["Length"]
-            width = row["Width"]
-            height = row["Height"]
 
-            volume_cm3 = length * width * height  # correct formula
-            total_weight += weight * qty
-            total_volume += volume_cm3 * qty
+            try:
+                weight = float(row.get("Weight", 0) or 0)
+                length = float(row.get("Length", 0) or 0)
+                width = float(row.get("Width", 0) or 0)
+                height = float(row.get("Height", 0) or 0)
+
+                volume_cm3 = length * width * height
+                total_weight += weight * qty
+                total_volume += volume_cm3 * qty
+
+                print(f"✅ {mat_id}: W={weight}, L={length}, W={width}, H={height}, Q={qty}")
+            except Exception as e:
+                print(f"⚠️ Error processing material {mat_id}: {e}")
+
+        else:
+            print(f"❌ Material ID {mat_id} not found in Excel")
 
     unique_materials = len(set(material_ids))
     task_count = len(material_ids)
-    avg_density = total_weight / total_volume if total_volume != 0 else 0
+    avg_density = total_weight / total_volume if total_volume else 0
 
     return {
         "Unique_Materials": unique_materials,
@@ -108,7 +117,7 @@ def predict_pallets(features):
     return {
         "predicted_pallets": max(pallets, 1),
         "model_used": model_type,
-        **features  # flatten all features for frontend
+        **features
     }
 
 # ===================== Routes =====================
@@ -142,7 +151,6 @@ def submit_feedback():
 def home():
     return "✅ Pallet Prediction API is running!"
 
-# ===================== Run =====================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
