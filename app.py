@@ -12,20 +12,19 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app, supports_credentials=True, origins=["https://creative-pavlova-c07a2b.netlify.app"])
 
-# Load models
+# ===================== Load Assets =====================
 base_dir = os.path.dirname(__file__)
 load = lambda name: joblib.load(os.path.join(base_dir, name))
+
 model_simple = load("model_simple_2024.pkl")
 model_complex = load("model_complex_2024.pkl")
 
-# Load master material sheet
 master_df = pd.read_excel(os.path.join(base_dir, "Export material master data.xlsx"))
 master_df.set_index("Material", inplace=True)
 
-# Load special material list
 special_material_ids = load("special_materials_auto.pkl")
 
-# ===================== Google Sheets via Base64 Secret =====================
+# ===================== Google Sheets =====================
 sheet = None
 try:
     creds_b64 = os.environ["GOOGLE_CREDS_B64"]
@@ -38,12 +37,11 @@ try:
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
     creds = ServiceAccountCredentials.from_json_keyfile_name(creds_path, scope)
     client = gspread.authorize(creds)
-    SHEET_NAME = "Pallet_feedback_log"
-    sheet = client.open(SHEET_NAME).sheet1
+    sheet = client.open("Pallet_feedback_log").sheet1
 except Exception as e:
     print("⚠️ Google Sheet setup failed:", e)
 
-# ===================== Utils =====================
+# ===================== Feature Computation =====================
 def compute_features(material_list):
     total_quantity = 0
     total_weight = 0
@@ -62,7 +60,6 @@ def compute_features(material_list):
 
         if mat_id in master_df.index:
             row = master_df.loc[mat_id]
-
             try:
                 weight = float(row.get("Weight", 0) or 0)
                 length = float(row.get("Length", 0) or 0)
@@ -76,7 +73,6 @@ def compute_features(material_list):
                 print(f"✅ {mat_id}: W={weight}, L={length}, W={width}, H={height}, Q={qty}")
             except Exception as e:
                 print(f"⚠️ Error processing material {mat_id}: {e}")
-
         else:
             print(f"❌ Material ID {mat_id} not found in Excel")
 
@@ -94,6 +90,7 @@ def compute_features(material_list):
         "Special_Materials": special_materials
     }
 
+# ===================== Prediction Logic =====================
 def predict_pallets(features):
     is_simple = (
         features["Unique_Materials"] <= 2 and
@@ -160,6 +157,7 @@ def submit_feedback():
 def home():
     return "✅ Pallet Prediction API is running!"
 
+# ===================== Run App =====================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
